@@ -1,5 +1,4 @@
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, RwLock};
 
 use alga::general::Real;
 use na;
@@ -9,9 +8,9 @@ use math::Point;
 /// One of the two end points of a joint.
 pub struct Anchor<N: Real, P> {
     /// The body attached to this anchor.
-    pub body:     Option<Rc<RefCell<RigidBody<N>>>>,
+    pub body: Option<Arc<RwLock<RigidBody<N>>>>,
     /// The attach position, in local coordinates of the attached body.
-    pub position: P
+    pub position: P,
 }
 
 impl<N: Real, P> Anchor<N, P> {
@@ -19,10 +18,10 @@ impl<N: Real, P> Anchor<N, P> {
     ///
     /// If `body` is `None`, the anchor is concidered to be attached to the ground and `position`
     /// is the attach point in global coordinates.
-    pub fn new(body: Option<Rc<RefCell<RigidBody<N>>>>, position: P) -> Anchor<N, P> {
+    pub fn new(body: Option<Arc<RwLock<RigidBody<N>>>>, position: P) -> Anchor<N, P> {
         Anchor {
-            body:     body,
-            position: position
+            body: body,
+            position: position,
         }
     }
 }
@@ -34,11 +33,11 @@ impl<N: Real, P> Anchor<N, P> {
     pub fn center_of_mass(&self) -> Point<N> {
         match self.body {
             Some(ref b) => {
-                let rb = b.borrow();
+                let rb = b.read().unwrap();
 
                 rb.center_of_mass().clone()
-            },
-            None => na::origin()
+            }
+            None => na::origin(),
         }
     }
 }
