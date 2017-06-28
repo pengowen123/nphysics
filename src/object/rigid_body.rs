@@ -1,8 +1,6 @@
 use std::mem;
 use std::any::Any;
 use std::ops::Mul;
-use std::rc::Rc;
-use std::cell::RefCell;
 use num::Bounded;
 
 use alga::general::Real;
@@ -15,7 +13,7 @@ use volumetric::{InertiaTensor, Volumetric};
 use object::RigidBodyCollisionGroups;
 
 /// A shared, mutable, rigid body.
-pub type RigidBodyHandle<N> = Rc<RefCell<RigidBody<N>>>;
+pub type RigidBodyHandle<N> = ::Rc<RigidBody<N>>;
 
 // FIXME: is this still useful (the same information is given by `self.inv_mass.is_zero()` ?
 #[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
