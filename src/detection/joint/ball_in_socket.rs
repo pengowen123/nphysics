@@ -8,8 +8,8 @@ use detection::joint::joint::Joint;
 /// This is usually used to create ragdolls.
 pub struct BallInSocket<N: Real> {
     up_to_date: bool,
-    anchor1: Anchor<N, Point<N>>,
-    anchor2: Anchor<N, Point<N>>,
+    anchor1:    Anchor<N, Point<N>>,
+    anchor2:    Anchor<N, Point<N>>,
 }
 
 impl<N: Real> BallInSocket<N> {
@@ -17,8 +17,8 @@ impl<N: Real> BallInSocket<N> {
     pub fn new(anchor1: Anchor<N, Point<N>>, anchor2: Anchor<N, Point<N>>) -> BallInSocket<N> {
         BallInSocket {
             up_to_date: false,
-            anchor1: anchor1,
-            anchor2: anchor2,
+            anchor1:    anchor1,
+            anchor2:    anchor2
         }
     }
 
@@ -71,8 +71,10 @@ impl<N: Real> Joint<N, Point<N>> for BallInSocket<N> {
     #[inline]
     fn anchor1_pos(&self) -> Point<N> {
         match self.anchor1.body {
-            Some(ref b) => b.read().unwrap().position() * self.anchor1.position,
-            None => self.anchor1.position.clone(),
+            Some(ref b) => {
+                b.borrow().position() * self.anchor1.position
+            },
+            None => self.anchor1.position.clone()
         }
     }
 
@@ -80,8 +82,10 @@ impl<N: Real> Joint<N, Point<N>> for BallInSocket<N> {
     #[inline]
     fn anchor2_pos(&self) -> Point<N> {
         match self.anchor2.body {
-            Some(ref b) => b.read().unwrap().position() * self.anchor2.position,
-            None => self.anchor2.position.clone(),
+            Some(ref b) => {
+                b.borrow().position() * self.anchor2.position
+            },
+            None => self.anchor2.position.clone()
         }
     }
 }

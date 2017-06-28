@@ -6,8 +6,8 @@ use detection::joint::joint::Joint;
 /// A joint that prevents any relative movement (linear and angular) between two objects.
 pub struct Fixed<N: Real> {
     up_to_date: bool,
-    anchor1: Anchor<N, Isometry<N>>,
-    anchor2: Anchor<N, Isometry<N>>,
+    anchor1:    Anchor<N, Isometry<N>>,
+    anchor2:    Anchor<N, Isometry<N>>,
 }
 
 impl<N: Real> Fixed<N> {
@@ -15,8 +15,8 @@ impl<N: Real> Fixed<N> {
     pub fn new(anchor1: Anchor<N, Isometry<N>>, anchor2: Anchor<N, Isometry<N>>) -> Fixed<N> {
         Fixed {
             up_to_date: false,
-            anchor1: anchor1,
-            anchor2: anchor2,
+            anchor1:    anchor1,
+            anchor2:    anchor2
         }
     }
 
@@ -68,8 +68,10 @@ impl<N: Real> Joint<N, Isometry<N>> for Fixed<N> {
     #[inline]
     fn anchor1_pos(&self) -> Isometry<N> {
         match self.anchor1.body {
-            Some(ref b) => *b.read().unwrap().position() * self.anchor1.position,
-            None => self.anchor1.position.clone(),
+            Some(ref b) => {
+                *b.borrow().position() * self.anchor1.position
+            },
+            None => self.anchor1.position.clone()
         }
     }
 
@@ -77,8 +79,10 @@ impl<N: Real> Joint<N, Isometry<N>> for Fixed<N> {
     #[inline]
     fn anchor2_pos(&self) -> Isometry<N> {
         match self.anchor2.body {
-            Some(ref b) => *b.read().unwrap().position() * self.anchor2.position,
-            None => self.anchor2.position.clone(),
+            Some(ref b) => {
+                *b.borrow().position() * self.anchor2.position
+            },
+            None => self.anchor2.position.clone()
         }
     }
 }

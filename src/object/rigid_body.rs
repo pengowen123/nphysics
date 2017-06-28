@@ -1,5 +1,8 @@
+use std::mem;
+use std::any::Any;
 use std::ops::Mul;
-use std::sync::{Arc, RwLock};
+use std::rc::Rc;
+use std::cell::RefCell;
 use num::Bounded;
 
 use alga::general::Real;
@@ -12,17 +15,16 @@ use volumetric::{InertiaTensor, Volumetric};
 use object::RigidBodyCollisionGroups;
 
 /// A shared, mutable, rigid body.
-pub type RigidBodyHandle<N> = Arc<RwLock<RigidBody<N>>>;
+pub type RigidBodyHandle<N> = Rc<RefCell<RigidBody<N>>>;
 
 // FIXME: is this still useful (the same information is given by `self.inv_mass.is_zero()` ?
 #[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
 /// The movement state of a rigid body.
-pub enum RigidBodyState {
-    // FIXME: rename this to "RigidBodyKind"?
+pub enum RigidBodyState { // FIXME: rename this to "RigidBodyKind"?
     /// The rigid body cannot move.
     Static,
     /// The rigid body can move.
-    Dynamic,
+    Dynamic
 }
 
 #[derive(Debug, PartialEq, Clone, RustcEncodable, RustcDecodable)]
@@ -33,7 +35,7 @@ pub enum ActivationState<N: Real> {
     /// The rigid body is inactive.
     Inactive,
     /// The rigid body has been removed from the physics engine.
-    Deleted,
+    Deleted
 }
 
 impl<N: Real> ActivationState<N> {
@@ -41,8 +43,8 @@ impl<N: Real> ActivationState<N> {
     pub fn energy(&self) -> N {
         match *self {
             ActivationState::Active(n) => n.clone(),
-            ActivationState::Inactive => na::zero(),
-            ActivationState::Deleted => na::zero(),
+            ActivationState::Inactive  => na::zero(),
+            ActivationState::Deleted   => na::zero()
         }
     }
 }
@@ -51,60 +53,62 @@ impl<N: Real> ActivationState<N> {
 ///
 /// This is the structure describing an object on the physics world.
 pub struct RigidBody<N: Real> {
-    state: RigidBodyState,
-    shape: ShapeHandle<Point<N>, Isometry<N>>,
-    local_to_world: Isometry<N>,
-    lin_vel: Vector<N>,
-    ang_vel: Orientation<N>,
-    inv_mass: N,
-    ls_inv_inertia: AngularInertia<N>,
-    inv_inertia: AngularInertia<N>,
-    ls_center_of_mass: Point<N>,
-    center_of_mass: Point<N>,
-    lin_acc: Vector<N>,
-    ang_acc: Orientation<N>,
-    gravity: Vector<N>,
-    lin_force: Vector<N>,
-    ang_force: Orientation<N>,
-    restitution: N,
-    friction: N,
-    index: isize,
-    activation_state: ActivationState<N>,
-    sleep_threshold: Option<N>,
-    lin_acc_scale: Vector<N>, // FIXME: find a better way of doing that.
-    ang_acc_scale: Orientation<N>, // FIXME: find a better way of doing that.
-    margin: N,
-    collision_groups: RigidBodyCollisionGroups,
+    state:                RigidBodyState,
+    shape:                ShapeHandle<Point<N>, Isometry<N>>,
+    local_to_world:       Isometry<N>,
+    lin_vel:              Vector<N>,
+    ang_vel:              Orientation<N>,
+    inv_mass:             N,
+    ls_inv_inertia:       AngularInertia<N>,
+    inv_inertia:          AngularInertia<N>,
+    ls_center_of_mass:    Point<N>,
+    center_of_mass:       Point<N>,
+    lin_acc:              Vector<N>,
+    ang_acc:              Orientation<N>,
+    gravity:              Vector<N>,
+    lin_force:            Vector<N>,
+    ang_force:            Orientation<N>,
+    restitution:          N,
+    friction:             N,
+    index:                isize,
+    activation_state:     ActivationState<N>,
+    sleep_threshold:      Option<N>,
+    lin_acc_scale:        Vector<N>,      // FIXME: find a better way of doing that.
+    ang_acc_scale:        Orientation<N>, // FIXME: find a better way of doing that.
+    margin:               N,
+    collision_groups:     RigidBodyCollisionGroups,
+    user_data:            Option<Box<Any>>
 }
 
 impl<N: Real> Clone for RigidBody<N> {
     /// Clones this rigid body but not its associated user-data.
     fn clone(&self) -> RigidBody<N> {
         RigidBody {
-            state: self.state.clone(),
-            shape: self.shape.clone(),
-            local_to_world: self.local_to_world.clone(),
-            lin_vel: self.lin_vel.clone(),
-            ang_vel: self.ang_vel.clone(),
-            inv_mass: self.inv_mass.clone(),
-            ls_inv_inertia: self.ls_inv_inertia.clone(),
-            inv_inertia: self.inv_inertia.clone(),
+            state:             self.state.clone(),
+            shape:             self.shape.clone(),
+            local_to_world:    self.local_to_world.clone(),
+            lin_vel:           self.lin_vel.clone(),
+            ang_vel:           self.ang_vel.clone(),
+            inv_mass:          self.inv_mass.clone(),
+            ls_inv_inertia:    self.ls_inv_inertia.clone(),
+            inv_inertia:       self.inv_inertia.clone(),
             ls_center_of_mass: self.ls_center_of_mass.clone(),
-            center_of_mass: self.center_of_mass.clone(),
-            lin_acc: self.lin_acc.clone(),
-            ang_acc: self.ang_acc.clone(),
-            gravity: self.gravity.clone(),
-            lin_force: self.lin_force.clone(),
-            ang_force: self.ang_force.clone(),
-            restitution: self.restitution.clone(),
-            friction: self.friction.clone(),
-            index: self.index.clone(),
-            activation_state: self.activation_state.clone(),
-            sleep_threshold: self.sleep_threshold.clone(),
-            lin_acc_scale: self.lin_acc_scale.clone(),
-            ang_acc_scale: self.ang_acc_scale.clone(),
-            margin: self.margin.clone(),
-            collision_groups: self.collision_groups.clone(),
+            center_of_mass:    self.center_of_mass.clone(),
+            lin_acc:           self.lin_acc.clone(),
+            ang_acc:           self.ang_acc.clone(),
+            gravity:           self.gravity.clone(),
+            lin_force:         self.lin_force.clone(),
+            ang_force:         self.ang_force.clone(),
+            restitution:       self.restitution.clone(),
+            friction:          self.friction.clone(),
+            index:             self.index.clone(),
+            activation_state:  self.activation_state.clone(),
+            sleep_threshold:   self.sleep_threshold.clone(),
+            lin_acc_scale:     self.lin_acc_scale.clone(),
+            ang_acc_scale:     self.ang_acc_scale.clone(),
+            margin:            self.margin.clone(),
+            collision_groups:  self.collision_groups.clone(),
+            user_data:         None
         }
     }
 }
@@ -114,8 +118,8 @@ impl<N: Real> RigidBody<N> {
     #[doc(hidden)]
     #[inline]
     pub fn deactivate(&mut self) {
-        self.lin_vel = na::zero();
-        self.ang_vel = na::zero();
+        self.lin_vel          = na::zero();
+        self.ang_vel          = na::zero();
         self.activation_state = ActivationState::Inactive;
     }
 
@@ -226,7 +230,7 @@ impl<N: Real> RigidBody<N> {
     pub fn is_active(&self) -> bool {
         match self.activation_state {
             ActivationState::Active(_) => true,
-            _ => false,
+            _ => false
         }
     }
 
@@ -266,7 +270,7 @@ impl<N: Real> RigidBody<N> {
 
     /// Creates a new rigid body that can move.
     pub fn new_dynamic<G>(shape: G, density: N, restitution: N, friction: N) -> RigidBody<N>
-where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, AngularInertia<N>>{
+        where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, AngularInertia<N>> {
         let props = shape.mass_properties(density);
 
         RigidBody::new(ShapeHandle::new(shape), Some(props), restitution, friction)
@@ -274,8 +278,7 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
 
     /// Creates a new rigid body that cannot move.
     pub fn new_static<G>(shape: G, restitution: N, friction: N) -> RigidBody<N>
-        where G: Send + Sync + Shape<Point<N>, Isometry<N>>
-    {
+        where G: Send + Sync + Shape<Point<N>, Isometry<N>> {
 
         RigidBody::new(ShapeHandle::new(shape), None, restitution, friction)
     }
@@ -284,21 +287,16 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
     ///
     /// Use this if the shape is shared by multiple rigid bodies.
     /// Set `mass_properties` to `None` if the rigid body is to be static.
-    pub fn new(shape: ShapeHandle<Point<N>, Isometry<N>>,
+    pub fn new(shape:           ShapeHandle<Point<N>, Isometry<N>>,
                mass_properties: Option<(N, Point<N>, AngularInertia<N>)>,
-               restitution: N,
-               friction: N)
+               restitution:     N,
+               friction:        N)
                -> RigidBody<N> {
         let (inv_mass, center_of_mass, inv_inertia, active, state, groups) =
             match mass_properties {
-                None => {
-                    (na::zero(),
-                     na::origin(),
-                     na::zero(),
-                     ActivationState::Inactive,
-                     RigidBodyState::Static,
-                     RigidBodyCollisionGroups::new_static())
-                }
+                None => (na::zero(), na::origin(), na::zero(),
+                         ActivationState::Inactive, RigidBodyState::Static,
+                         RigidBodyCollisionGroups::new_static()),
                 Some((mass, com, inertia)) => {
                     if mass.is_zero() {
                         panic!("A dynamic body must not have a zero volume.")
@@ -308,7 +306,7 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
 
                     match inertia.try_inverse() {
                         Some(i) => ii = i,
-                        None => ii = na::zero(),
+                        None    => ii = na::zero()
                     }
 
                     // Will be set to a sensible value later.
@@ -317,35 +315,37 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
                     let _1: N = na::one();
 
                     (_1 / mass, com, ii, active, RigidBodyState::Dynamic, groups)
-                }
+                },
             };
 
-        let mut res = RigidBody {
-            state: state,
-            shape: shape,
-            local_to_world: na::one(),
-            lin_vel: na::zero(),
-            ang_vel: na::zero(),
-            inv_mass: inv_mass,
-            ls_inv_inertia: inv_inertia.clone(),
-            inv_inertia: inv_inertia,
-            ls_center_of_mass: center_of_mass,
-            center_of_mass: na::origin(),
-            lin_acc: na::zero(),
-            ang_acc: na::zero(),
-            gravity: na::zero(),
-            lin_force: na::zero(),
-            ang_force: na::zero(),
-            friction: friction,
-            restitution: restitution,
-            index: 0,
-            activation_state: active,
-            sleep_threshold: Some(na::convert(0.1f64)),
-            lin_acc_scale: Vector::from_element(N::one()),
-            ang_acc_scale: Orientation::from_element(N::one()),
-            margin: na::convert(0.04f64), // FIXME: do not hard-code this.
-            collision_groups: groups,
-        };
+        let mut res =
+            RigidBody {
+                state:             state,
+                shape:             shape,
+                local_to_world:    na::one(),
+                lin_vel:           na::zero(),
+                ang_vel:           na::zero(),
+                inv_mass:          inv_mass,
+                ls_inv_inertia:    inv_inertia.clone(),
+                inv_inertia:       inv_inertia,
+                ls_center_of_mass: center_of_mass,
+                center_of_mass:    na::origin(),
+                lin_acc:           na::zero(),
+                ang_acc:           na::zero(),
+                gravity:           na::zero(),
+                lin_force:         na::zero(),
+                ang_force:         na::zero(),
+                friction:          friction,
+                restitution:       restitution,
+                index:             0,
+                activation_state:  active,
+                sleep_threshold:   Some(na::convert(0.1f64)),
+                lin_acc_scale:     Vector::from_element(N::one()),
+                ang_acc_scale:     Orientation::from_element(N::one()),
+                margin:            na::convert(0.04f64), // FIXME: do not hard-code this.
+                collision_groups:  groups,
+                user_data:         None
+            };
 
         res.update_center_of_mass();
         res.update_inertia_tensor();
@@ -358,7 +358,7 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
     pub fn can_move(&self) -> bool {
         match self.state {
             RigidBodyState::Dynamic => true,
-            _ => false,
+            _ => false
         }
     }
 
@@ -520,8 +520,7 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
     /// Update the linear acceleraction from the applied forces.
     #[inline]
     fn update_lin_acc(&mut self) {
-        self.lin_acc = (self.lin_force * self.inv_mass + self.gravity)
-            .component_mul(&self.lin_acc_scale);
+        self.lin_acc = (self.lin_force * self.inv_mass + self.gravity).component_mul(&self.lin_acc_scale);
     }
     /// Update the angular acceleraction from the applied forces.
     #[inline]
@@ -539,15 +538,15 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
 
     /// Applies a one-time central impulse.
     #[inline]
-    pub fn apply_central_impulse(&mut self, impulse: Vector<N>) {
+    pub fn apply_central_impulse(&mut self, impulse: Vector<N>){
         let current_velocity = self.lin_vel();
-        let inverted_mass = self.inv_mass();
+        let inverted_mass    = self.inv_mass();
         self.set_lin_vel(current_velocity + impulse * inverted_mass);
     }
 
     /// Applies a one-time angular impulse.
     #[inline]
-    pub fn apply_angular_momentum(&mut self, ang_moment: Orientation<N>) {
+    pub fn apply_angular_momentum(&mut self, ang_moment: Orientation<N>){
         let current_ang_velocity = self.ang_vel();
         let inverted_tensor = self.inv_inertia().clone();
         self.set_ang_vel(current_ang_velocity + inverted_tensor * ang_moment);
@@ -558,7 +557,7 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
     /// The `pnt_to_com` vector has to point from the center of mass to the
     /// point where the impulse acts.
     #[inline]
-    pub fn apply_impulse_wrt_point(&mut self, impulse: Vector<N>, pnt_to_com: Vector<N>) {
+    pub fn apply_impulse_wrt_point(&mut self, impulse: Vector<N>, pnt_to_com: Vector<N>){
         self.apply_central_impulse(impulse);
         self.apply_angular_momentum(pnt_to_com.gcross(&impulse));
     }
@@ -686,26 +685,37 @@ where G: Send + Sync + Shape<Point<N>, Isometry<N>> + Volumetric<N, Point<N>, An
 
         self.collision_groups = new_groups;
     }
+
+    /// Reference to user-defined data attached to this rigid body.
+    #[inline]
+    pub fn user_data(&self) -> Option<&Box<Any>> {
+        self.user_data.as_ref()
+    }
+
+    /// Mutable reference to user-defined data attached to this rigid body.
+    #[inline]
+    pub fn user_data_mut(&mut self) -> Option<&mut Box<Any>> {
+        self.user_data.as_mut()
+    }
+
+    /// Attach some user-defined data to this rigid body and return the old one.
+    pub fn set_user_data(&mut self, user_data: Option<Box<Any>>) -> Option<Box<Any>> {
+        mem::replace(&mut self.user_data, user_data)
+    }
 }
 
 impl<N, M> HasBoundingVolume<M, BoundingSphere<Point<N>>> for RigidBody<N>
     where N: Real,
-          M: Copy + Mul<Isometry<N>, Output = Isometry<N>>
-{
-    // FIXME: avoiding `Copy` would be great.
+          M: Copy + Mul<Isometry<N>, Output = Isometry<N>> { // FIXME: avoiding `Copy` would be great.
     fn bounding_volume(&self, m: &M) -> BoundingSphere<Point<N>> {
-        bounding_volume::bounding_sphere(self.shape.as_ref(), &(*m * self.local_to_world))
-            .loosened(self.margin())
+        bounding_volume::bounding_sphere(self.shape.as_ref(), &(*m * self.local_to_world)).loosened(self.margin())
     }
 }
 
 impl<N, M> HasBoundingVolume<M, AABB<Point<N>>> for RigidBody<N>
     where N: Real,
-          M: Copy + Mul<Isometry<N>, Output = Isometry<N>>
-{
-    // FIXME: avoiding `Copy` would be great.
+          M: Copy + Mul<Isometry<N>, Output = Isometry<N>> { // FIXME: avoiding `Copy` would be great.
     fn bounding_volume(&self, m: &M) -> AABB<Point<N>> {
-        bounding_volume::aabb(self.shape.as_ref(), &(*m * self.local_to_world))
-            .loosened(self.margin())
+        bounding_volume::aabb(self.shape.as_ref(), &(*m * self.local_to_world)).loosened(self.margin())
     }
 }

@@ -1,4 +1,4 @@
-use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::cell::{RefCell, Ref, RefMut};
 
 use alga::general::Real;
 use ncollide::shape::ShapeHandle;
@@ -11,23 +11,23 @@ pub enum WorldObject<N: Real> {
     /// A rigid body handle.
     RigidBody(RigidBodyHandle<N>),
     /// A sensor handle.
-    Sensor(SensorHandle<N>),
+    Sensor(SensorHandle<N>)
 }
 
 /// Reference to a world object.
 pub enum WorldObjectBorrowed<'a, N: Real> {
     /// A borrowed rigid body handle.
-    RigidBody(RwLockReadGuard<'a, RigidBody<N>>),
+    RigidBody(Ref<'a, RigidBody<N>>),
     /// A borrowed sensor handle.
-    Sensor(RwLockReadGuard<'a, Sensor<N>>),
+    Sensor(Ref<'a, Sensor<N>>)
 }
 
 /// Mutable reference to a world object.
 pub enum WorldObjectBorrowedMut<'a, N: Real> {
     /// A mutably borrowed rigid body handle.
-    RigidBody(RwLockWriteGuard<'a, RigidBody<N>>),
+    RigidBody(RefMut<'a, RigidBody<N>>),
     /// A mutably borrowed sensor handle.
-    Sensor(RwLockWriteGuard<'a, Sensor<N>>),
+    Sensor(RefMut<'a, Sensor<N>>)
 }
 
 impl<N: Real> WorldObject<N> {
@@ -36,7 +36,7 @@ impl<N: Real> WorldObject<N> {
     /// This identifier remains unique and will not change as long as `rb` is kept alive in memory.
     #[inline]
     pub fn rigid_body_uid(rb: &RigidBodyHandle<N>) -> usize {
-        &**rb as *const RwLock<RigidBody<N>> as usize
+        &**rb as *const RefCell<RigidBody<N>> as usize
     }
 
     /// The unique identifier a sensor would have if it was wrapped on a `WorldObject`.
@@ -44,7 +44,7 @@ impl<N: Real> WorldObject<N> {
     /// This identifier remains unique and will not change as long as `s` is kept alive in memory.
     #[inline]
     pub fn sensor_uid(s: &SensorHandle<N>) -> usize {
-        &**s as *const RwLock<Sensor<N>> as usize
+        &**s  as *const RefCell<Sensor<N>> as usize
     }
 
     /// Whether or not this is a rigid body.
@@ -52,7 +52,7 @@ impl<N: Real> WorldObject<N> {
     pub fn is_rigid_body(&self) -> bool {
         match *self {
             WorldObject::RigidBody(_) => true,
-            _ => false,
+            _                         => false
         }
     }
 
@@ -61,7 +61,7 @@ impl<N: Real> WorldObject<N> {
     pub fn is_sensor(&self) -> bool {
         match *self {
             WorldObject::Sensor(_) => true,
-            _ => false,
+            _                      => false
         }
     }
 
@@ -70,7 +70,7 @@ impl<N: Real> WorldObject<N> {
     pub fn unwrap_sensor(self) -> SensorHandle<N> {
         match self {
             WorldObject::Sensor(s) => s,
-            _ => panic!("This world object is not a sensor."),
+            _                      => panic!("This world object is not a sensor.")
         }
     }
 
@@ -79,7 +79,7 @@ impl<N: Real> WorldObject<N> {
     pub fn unwrap_rigid_body(self) -> RigidBodyHandle<N> {
         match self {
             WorldObject::RigidBody(rb) => rb.clone(),
-            _ => panic!("This world object is not a rigid body."),
+            _                          => panic!("This world object is not a rigid body.")
         }
     }
 
@@ -88,7 +88,7 @@ impl<N: Real> WorldObject<N> {
     pub fn uid(&self) -> usize {
         match *self {
             WorldObject::RigidBody(ref rb) => WorldObject::rigid_body_uid(rb),
-            WorldObject::Sensor(ref s) => WorldObject::sensor_uid(s),
+            WorldObject::Sensor(ref s)     => WorldObject::sensor_uid(s)
         }
     }
 
@@ -96,26 +96,26 @@ impl<N: Real> WorldObject<N> {
     #[inline]
     pub fn borrow(&self) -> WorldObjectBorrowed<N> {
         match *self {
-            WorldObject::RigidBody(ref rb) => WorldObjectBorrowed::RigidBody(rb.read().unwrap()),
-            WorldObject::Sensor(ref s) => WorldObjectBorrowed::Sensor(s.read().unwrap()),
+            WorldObject::RigidBody(ref rb) => WorldObjectBorrowed::RigidBody(rb.borrow()),
+            WorldObject::Sensor(ref s)     => WorldObjectBorrowed::Sensor(s.borrow())
         }
     }
 
     /// Borrows this world object as a sensor.
     #[inline]
-    pub fn borrow_sensor(&self) -> RwLockReadGuard<Sensor<N>> {
+    pub fn borrow_sensor(&self) -> Ref<Sensor<N>> {
         match *self {
-            WorldObject::Sensor(ref s) => s.read().unwrap(),
-            _ => panic!("This world object is not a sensor."),
+            WorldObject::Sensor(ref s) => s.borrow(),
+            _                          => panic!("This world object is not a sensor.")
         }
     }
 
     /// Borrows this world object as a rigid body.
     #[inline]
-    pub fn borrow_rigid_body(&self) -> RwLockReadGuard<RigidBody<N>> {
+    pub fn borrow_rigid_body(&self) -> Ref<RigidBody<N>> {
         match *self {
-            WorldObject::RigidBody(ref rb) => rb.read().unwrap(),
-            _ => panic!("This world object is not a rigid body."),
+            WorldObject::RigidBody(ref rb) => rb.borrow(),
+            _                              => panic!("This world object is not a rigid body.")
         }
     }
 
@@ -123,28 +123,26 @@ impl<N: Real> WorldObject<N> {
     #[inline]
     pub fn borrow_mut(&mut self) -> WorldObjectBorrowedMut<N> {
         match *self {
-            WorldObject::RigidBody(ref mut rb) => {
-                WorldObjectBorrowedMut::RigidBody(rb.write().unwrap())
-            }
-            WorldObject::Sensor(ref mut s) => WorldObjectBorrowedMut::Sensor(s.write().unwrap()),
+            WorldObject::RigidBody(ref mut rb) => WorldObjectBorrowedMut::RigidBody(rb.borrow_mut()),
+            WorldObject::Sensor(ref mut s)     => WorldObjectBorrowedMut::Sensor(s.borrow_mut())
         }
     }
 
     /// Mutably borrows this world object as a sensor.
     #[inline]
-    pub fn borrow_mut_sensor(&mut self) -> RwLockWriteGuard<Sensor<N>> {
+    pub fn borrow_mut_sensor(&mut self) -> RefMut<Sensor<N>> {
         match *self {
-            WorldObject::Sensor(ref mut s) => s.write().unwrap(),
-            _ => panic!("This world object is not a sensor."),
+            WorldObject::Sensor(ref mut s) => s.borrow_mut(),
+            _                              => panic!("This world object is not a sensor.")
         }
     }
 
     /// Mutably borrows this world object as a rigid body.
     #[inline]
-    pub fn borrow_mut_rigid_body(&mut self) -> RwLockWriteGuard<RigidBody<N>> {
+    pub fn borrow_mut_rigid_body(&mut self) -> RefMut<RigidBody<N>> {
         match *self {
-            WorldObject::RigidBody(ref mut rb) => rb.write().unwrap(),
-            _ => panic!("This world object is not a rigid body."),
+            WorldObject::RigidBody(ref mut rb) => rb.borrow_mut(),
+            _                                  => panic!("This world object is not a rigid body.")
         }
     }
 }
