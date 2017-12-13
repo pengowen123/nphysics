@@ -19,37 +19,38 @@ use resolution::constraint::impulse_cache::ImpulseCache;
 
 /// Constraint solver using the projected gauss seidel algorithm and warm-starting.
 pub struct AccumulatedImpulseSolver<N: Real> {
-    correction:              CorrectionParameters<N>,
-    cache:                   ImpulseCache<N>,
-    num_first_order_iter:    usize,
-    num_second_order_iter:   usize,
+    correction: CorrectionParameters<N>,
+    cache: ImpulseCache<N>,
+    num_first_order_iter: usize,
+    num_second_order_iter: usize,
     restitution_constraints: Vec<VelocityConstraint<N>>,
-    friction_constraints:    Vec<VelocityConstraint<N>>,
-    mj_lambda:               Vec<Velocities<N>>
+    friction_constraints: Vec<VelocityConstraint<N>>,
+    mj_lambda: Vec<Velocities<N>>,
 }
 
 impl<N: Real> AccumulatedImpulseSolver<N> {
     /// Creates a new `AccumulatedImpulseSolver`.
-    pub fn new(step:                  N,
-               correction_mode:       CorrectionMode<N>,
-               joint_corr_factor:     N,
-               rest_eps:              N,
-               num_first_order_iter:  usize,
-               num_second_order_iter: usize)
-               -> AccumulatedImpulseSolver<N> {
+    pub fn new(
+        step: N,
+        correction_mode: CorrectionMode<N>,
+        joint_corr_factor: N,
+        rest_eps: N,
+        num_first_order_iter: usize,
+        num_second_order_iter: usize,
+    ) -> AccumulatedImpulseSolver<N> {
         AccumulatedImpulseSolver {
-            num_first_order_iter:    num_first_order_iter,
-            num_second_order_iter:   num_second_order_iter,
+            num_first_order_iter: num_first_order_iter,
+            num_second_order_iter: num_second_order_iter,
             restitution_constraints: Vec::new(),
-            friction_constraints:    Vec::new(),
-            mj_lambda:               Vec::new(),
-            cache:                   ImpulseCache::new(step, na::dimension::<Vector<N>>()),
+            friction_constraints: Vec::new(),
+            mj_lambda: Vec::new(),
+            cache: ImpulseCache::new(step, na::dimension::<Vector<N>>()),
 
             correction: CorrectionParameters {
-                corr_mode:  correction_mode,
+                corr_mode: correction_mode,
                 joint_corr: joint_corr_factor,
-                rest_eps:   rest_eps
-            }
+                rest_eps: rest_eps,
+            },
         }
     }
 
@@ -78,21 +79,27 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
     }
 
     fn resize_buffers(&mut self, num_restitution_equations: usize, num_friction_equations: usize) {
-        resize_buffer(&mut self.restitution_constraints,
-                      num_restitution_equations,
-                      VelocityConstraint::new());
+        resize_buffer(
+            &mut self.restitution_constraints,
+            num_restitution_equations,
+            VelocityConstraint::new(),
+        );
 
-        resize_buffer(&mut self.friction_constraints,
-                      num_friction_equations,
-                      VelocityConstraint::new());
+        resize_buffer(
+            &mut self.friction_constraints,
+            num_friction_equations,
+            VelocityConstraint::new(),
+        );
     }
 
-    fn do_solve(&mut self,
-                dt:          N,
-                constraints: &[Constraint<N>],
-                joints:      &[usize],
-                bodies:      &[::Rc<RigidBody<N>>]) {
-        let num_friction_equations    = (na::dimension::<Vector<N>>() - 1) * self.cache.len();
+    fn do_solve(
+        &mut self,
+        dt: N,
+        constraints: &[Constraint<N>],
+        joints: &[usize],
+        bodies: &[::Rc<RigidBody<N>>],
+    ) {
+        let num_friction_equations = (na::dimension::<Vector<N>>() - 1) * self.cache.len();
         let num_restitution_equations = self.cache.len();
         let mut num_joint_equations = 0;
 
@@ -100,17 +107,19 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
             match constraints[*i] {
                 Constraint::BallInSocket(_) => {
                     num_joint_equations = num_joint_equations + na::dimension::<Vector<N>>()
-                },
+                }
                 Constraint::Fixed(_) => {
-                    num_joint_equations = num_joint_equations +
-                                          na::dimension::<Vector<N>>() +
-                                          na::dimension::<Orientation<N>>()
-                },
-                Constraint::RBRB(_, _, _) => { }
+                    num_joint_equations = num_joint_equations + na::dimension::<Vector<N>>() +
+                        na::dimension::<Orientation<N>>()
+                }
+                Constraint::RBRB(_, _, _) => {}
             }
         }
 
-        self.resize_buffers(num_restitution_equations + num_joint_equations, num_friction_equations);
+        self.resize_buffers(
+            num_restitution_equations + num_joint_equations,
+            num_friction_equations,
+        );
 
         let mut friction_offset = 0;
 
@@ -120,15 +129,17 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
                     contact_equation::fill_second_order_equation(
                         dt.clone(),
                         c,
-                        &*rb1.borrow(), &*rb2.borrow(),
+                        &*rb1.borrow(),
+                        &*rb2.borrow(),
                         &mut self.restitution_constraints[i],
                         i,
                         &mut self.friction_constraints[..],
                         friction_offset,
                         self.cache.impulsions_at(imp),
-                        &self.correction);
-                },
-                _ => { }
+                        &self.correction,
+                    );
+                }
+                _ => {}
             }
 
             friction_offset = friction_offset + na::dimension::<Vector<N>>() - 1;
@@ -142,23 +153,24 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
                     ball_in_socket_equation::fill_second_order_equation(
                         dt.clone(),
                         &*bis.borrow(),
-                        &mut self.restitution_constraints[joint_offset .. nconstraints], // XXX
-                        &self.correction
+                        &mut self.restitution_constraints[joint_offset..nconstraints], // XXX
+                        &self.correction,
                     );
 
                     joint_offset = joint_offset + na::dimension::<Vector<N>>();
-                },
+                }
                 Constraint::Fixed(ref f) => {
                     fixed_equation::fill_second_order_equation(
                         dt.clone(),
                         &*f.borrow(),
-                        &mut self.restitution_constraints[joint_offset .. nconstraints], // XXX
-                        &self.correction
+                        &mut self.restitution_constraints[joint_offset..nconstraints], // XXX
+                        &self.correction,
                     );
 
-                    joint_offset = joint_offset + na::dimension::<Vector<N>>() + na::dimension::<Orientation<N>>();
-                },
-                Constraint::RBRB(_, _, _) => { }
+                    joint_offset = joint_offset + na::dimension::<Vector<N>>() +
+                        na::dimension::<Orientation<N>>();
+                }
+                Constraint::RBRB(_, _, _) => {}
             }
         }
 
@@ -171,14 +183,15 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
             &mut self.mj_lambda[..],
             bodies.len(),
             self.num_second_order_iter,
-            false);
+            false,
+        );
 
         // FIXME: this is _so_ ugly!
         self.resize_buffers(num_restitution_equations, num_friction_equations);
 
         for b in bodies.iter() {
             let mut rb = b.borrow_mut();
-            let i      = rb.index();
+            let i = rb.index();
 
             let curr_lin_vel = rb.lin_vel();
             let curr_ang_vel = rb.ang_vel();
@@ -189,9 +202,9 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
 
         for (i, dv) in self.restitution_constraints.iter().enumerate() {
             let imps = self.cache.push_impulsions();
-            imps[0]  = dv.impulse * na::convert::<f64, N>(0.85f64);
+            imps[0] = dv.impulse * na::convert::<f64, N>(0.85f64);
 
-            for j in 0usize .. na::dimension::<Vector<N>>() - 1 {
+            for j in 0usize..na::dimension::<Vector<N>>() - 1 {
                 let fc = &self.friction_constraints[i * (na::dimension::<Vector<N>>() - 1) + j];
                 imps[1 + j] = fc.impulse * na::convert::<f64, N>(0.85f64);
             }
@@ -207,12 +220,13 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
          */
         let needs_correction = !self.correction.corr_mode.pos_corr_factor().is_zero() &&
             constraints.iter().any(|constraint| {
-            match *constraint {
-                Constraint::RBRB(_, _, ref c) =>
-                    c.depth >= self.correction.corr_mode.min_depth_for_pos_corr(),
-                _ => false // no first order resolution for joints
-            }
-        });
+                match *constraint {
+                    Constraint::RBRB(_, _, ref c) => {
+                        c.depth >= self.correction.corr_mode.min_depth_for_pos_corr()
+                    }
+                    _ => false, // no first order resolution for joints
+                }
+            });
 
         if needs_correction {
             self.resize_buffers(num_restitution_equations, num_friction_equations);
@@ -224,9 +238,10 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
                             dt.clone(),
                             c,
                             &mut self.restitution_constraints[i],
-                            &self.correction);
-                    },
-                    _ => { }
+                            &self.correction,
+                        );
+                    }
+                    _ => {}
                 }
             }
 
@@ -237,14 +252,15 @@ impl<N: Real> AccumulatedImpulseSolver<N> {
                 &mut self.mj_lambda[..],
                 bodies.len(),
                 self.num_first_order_iter,
-                true);
+                true,
+            );
 
             for b in bodies.iter() {
                 let mut rb = b.borrow_mut();
-                let i      = rb.index();
+                let i = rb.index();
 
                 let translation = Translation::from_vector(self.mj_lambda[i as usize].lv * dt);
-                let rotation    = Rotation::from_scaled_axis(self.mj_lambda[i as usize].av * dt);
+                let rotation = Rotation::from_scaled_axis(self.mj_lambda[i as usize].av * dt);
 
                 let center = *rb.center_of_mass();
 
@@ -270,14 +286,16 @@ impl<N: Real> Solver<N, Constraint<N>> for AccumulatedImpulseSolver<N> {
             for (i, cstr) in constraints.iter().enumerate() {
                 match *cstr {
                     Constraint::RBRB(ref a, ref b, ref c) => {
-                        self.cache.insert(i,
-                                          a.ptr() as usize,
-                                          b.ptr() as usize,
-                                          na::center(&c.world1, &c.world2));
-                    },
+                        self.cache.insert(
+                            i,
+                            a.ptr() as usize,
+                            b.ptr() as usize,
+                            na::center(&c.world1, &c.world2),
+                        );
+                    }
                     Constraint::BallInSocket(_) => {
                         // XXX: cache for ball in socket?
-                    },
+                    }
                     Constraint::Fixed(_) => {
                         // XXX: cache for fixed?
                     }
@@ -295,37 +313,30 @@ impl<N: Real> Solver<N, Constraint<N>> for AccumulatedImpulseSolver<N> {
                     Constraint::RBRB(ref a, ref b, _) => {
                         a.borrow_mut().set_index(-2);
                         b.borrow_mut().set_index(-2)
-                    },
+                    }
                     Constraint::BallInSocket(ref bis) => {
                         let bbis = bis.borrow();
                         match bbis.anchor1().body {
-                            Some(ref b) => {
-                                b.borrow_mut().set_index(-2)
-                            },
-                            None    => { }
+                            Some(ref b) => b.borrow_mut().set_index(-2),
+                            None => {}
                         };
 
                         match bbis.anchor2().body {
-                            Some(ref b) => {
-                                b.borrow_mut().set_index(-2)
-                            },
-                            None    => { }
+                            Some(ref b) => b.borrow_mut().set_index(-2),
+                            None => {}
                         }
                     }
-                    Constraint::Fixed(ref f) => { // FIXME: code duplication from BallInSocket
+                    Constraint::Fixed(ref f) => {
+                        // FIXME: code duplication from BallInSocket
                         let bf = f.borrow();
                         match bf.anchor1().body {
-                            Some(ref b) => {
-                                b.borrow_mut().set_index(-2)
-                            },
-                            None    => { }
+                            Some(ref b) => b.borrow_mut().set_index(-2),
+                            None => {}
                         };
 
                         match bf.anchor2().body {
-                            Some(ref b) => {
-                                b.borrow_mut().set_index(-2)
-                            },
-                            None    => { }
+                            Some(ref b) => b.borrow_mut().set_index(-2),
+                            None => {}
                         }
                     }
                 }
@@ -333,17 +344,18 @@ impl<N: Real> Solver<N, Constraint<N>> for AccumulatedImpulseSolver<N> {
 
             let mut id = 0;
 
-            fn set_body_index<N: Real>(a:      &::Rc<RigidBody<N>>,
-                                       bodies: &mut Vec<::Rc<RigidBody<N>>>,
-                                       id:     &mut isize) {
+            fn set_body_index<N: Real>(
+                a: &::Rc<RigidBody<N>>,
+                bodies: &mut Vec<::Rc<RigidBody<N>>>,
+                id: &mut isize,
+            ) {
                 let mut ba = a.borrow_mut();
                 if ba.index() == -2 {
                     if ba.can_move() {
                         ba.set_index(*id);
                         bodies.push(a.clone());
                         *id = *id + 1;
-                    }
-                    else {
+                    } else {
                         ba.set_index(-1)
                     }
                 }
@@ -356,31 +368,32 @@ impl<N: Real> Solver<N, Constraint<N>> for AccumulatedImpulseSolver<N> {
                     Constraint::RBRB(ref a, ref b, _) => {
                         set_body_index(a, &mut bodies, &mut id);
                         set_body_index(b, &mut bodies, &mut id);
-                    },
+                    }
                     Constraint::BallInSocket(ref bis) => {
                         joints.push(i);
                         let bbis = bis.borrow();
                         match bbis.anchor1().body {
                             Some(ref b) => set_body_index(b, &mut bodies, &mut id),
-                            None        => { }
+                            None => {}
                         }
 
                         match bbis.anchor2().body {
                             Some(ref b) => set_body_index(b, &mut bodies, &mut id),
-                            None        => { }
+                            None => {}
                         }
-                    },
-                    Constraint::Fixed(ref f) => { // FIXME: code duplication from BallInSocket
+                    }
+                    Constraint::Fixed(ref f) => {
+                        // FIXME: code duplication from BallInSocket
                         joints.push(i);
                         let bf = f.borrow();
                         match bf.anchor1().body {
                             Some(ref b) => set_body_index(b, &mut bodies, &mut id),
-                            None        => { }
+                            None => {}
                         }
 
                         match bf.anchor2().body {
                             Some(ref b) => set_body_index(b, &mut bodies, &mut id),
-                            None        => { }
+                            None => {}
                         }
                     }
                 }
@@ -396,8 +409,7 @@ fn resize_buffer<A: Clone>(buff: &mut Vec<A>, size: usize, val: A) {
     if buff.len() < size {
         let diff = size - buff.len();
         buff.extend(iter::repeat(val).take(diff));
-    }
-    else {
+    } else {
         buff.truncate(size)
     }
 }

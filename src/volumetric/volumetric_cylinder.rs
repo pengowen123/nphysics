@@ -15,13 +15,9 @@ pub fn cylinder_volume<N: Real>(dimension: usize, half_height: N, radius: N) -> 
     assert!(dimension == 2 || dimension == 3);
 
     match dimension {
-        2 => {
-            half_height * radius * na::convert(4.0f64)
-        }
-        3 => {
-            half_height * radius * radius * N::pi() * na::convert(2.0f64)
-        }
-        _ => unreachable!()
+        2 => half_height * radius * na::convert(4.0f64),
+        3 => half_height * radius * radius * N::pi() * na::convert(2.0f64),
+        _ => unreachable!(),
     }
 }
 
@@ -31,17 +27,15 @@ pub fn cylinder_area<N: Real>(dimension: usize, half_height: N, radius: N) -> N 
     assert!(dimension == 2 || dimension == 3);
 
     match dimension {
-        2 => {
-            (half_height + radius) * na::convert(2.0f64)
-        }
+        2 => (half_height + radius) * na::convert(2.0f64),
         3 => {
-            let _pi   = N::pi();
+            let _pi = N::pi();
             let basis = radius * radius * _pi;
-            let side  = _pi * radius * (half_height + half_height) * na::convert(2.0f64);
+            let side = _pi * radius * (half_height + half_height) * na::convert(2.0f64);
 
             side + basis + basis
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -54,18 +48,20 @@ pub fn cylinder_center_of_mass<P: Point>() -> P {
 /// The unit angular inertia of a cylinder.
 #[inline]
 pub fn cylinder_unit_angular_inertia<N, I>(dimension: usize, half_height: N, radius: N) -> I
-    where N: Real,
-          I: Zero + IndexMut<(usize, usize), Output = N> {
+where
+    N: Real,
+    I: Zero + IndexMut<(usize, usize), Output = N>,
+{
     assert!(dimension == 2 || dimension == 3);
 
     match dimension {
         2 => {
             // Same a the rectangle.
-            let _2:   N = na::convert(2.0f64);
+            let _2: N = na::convert(2.0f64);
             let _i12: N = na::convert(1.0f64 / 12.0);
-            let w       = _i12 * _2 * _2;
-            let ix      = w * half_height * half_height;
-            let iy      = w * radius * radius;
+            let w = _i12 * _2 * _2;
+            let ix = w * half_height * half_height;
+            let iy = w * radius * radius;
 
             let mut res = I::zero();
 
@@ -74,9 +70,10 @@ pub fn cylinder_unit_angular_inertia<N, I>(dimension: usize, half_height: N, rad
             res
         }
         3 => {
-            let sq_radius     = radius * radius;
-            let sq_height     = half_height * half_height * na::convert(4.0f64);
-            let off_principal = (sq_radius * na::convert(3.0f64) + sq_height) / na::convert(12.0f64);
+            let sq_radius = radius * radius;
+            let sq_height = half_height * half_height * na::convert(4.0f64);
+            let off_principal = (sq_radius * na::convert(3.0f64) + sq_height) /
+                na::convert(12.0f64);
 
             let mut res = I::zero();
 
@@ -86,7 +83,7 @@ pub fn cylinder_unit_angular_inertia<N, I>(dimension: usize, half_height: N, rad
 
             res
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 

@@ -12,15 +12,15 @@ pub type SensorHandle<N> = ::Rc<Sensor<N>>;
 
 /// An object capable of detecting interferances with other entities without interacting with them.
 pub struct Sensor<N: Real> {
-    parent:              Option<RigidBodyHandle<N>>,
-    relative_position:   Isometry<N>,
-    shape:               ShapeHandle<Point<N>, Isometry<N>>,
-    margin:              N,
-    collision_groups:    SensorCollisionGroups,
-    parent_prox:         bool,
-    user_data:           Option<Box<Any>>,
-    interfering_bodies:  Vec<RigidBodyHandle<N>>,
-    interfering_sensors: Vec<SensorHandle<N>>
+    parent: Option<RigidBodyHandle<N>>,
+    relative_position: Isometry<N>,
+    shape: ShapeHandle<Point<N>, Isometry<N>>,
+    margin: N,
+    collision_groups: SensorCollisionGroups,
+    parent_prox: bool,
+    user_data: Option<Box<Any>>,
+    interfering_bodies: Vec<RigidBodyHandle<N>>,
+    interfering_sensors: Vec<SensorHandle<N>>,
 }
 
 impl<N: Real> Sensor<N> {
@@ -33,24 +33,27 @@ impl<N: Real> Sensor<N> {
     ///
     /// A sensor has a default margin equal to zero.
     pub fn new<G>(shape: G, parent: Option<RigidBodyHandle<N>>) -> Sensor<N>
-        where G: Send + Sync + Shape<Point<N>, Isometry<N>> {
+    where
+        G: Send + Sync + Shape<Point<N>, Isometry<N>>,
+    {
         Sensor::new_with_shared_shape(ShapeHandle::new(shape), parent)
     }
 
     /// Creates a new senson with a given shared shape.
-    pub fn new_with_shared_shape(shape:  ShapeHandle<Point<N>, Isometry<N>>,
-                                 parent: Option<RigidBodyHandle<N>>)
-                                 -> Sensor<N> {
+    pub fn new_with_shared_shape(
+        shape: ShapeHandle<Point<N>, Isometry<N>>,
+        parent: Option<RigidBodyHandle<N>>,
+    ) -> Sensor<N> {
         Sensor {
-            parent:              parent,
-            relative_position:   na::one(),
-            shape:               shape,
-            margin:              na::zero(),
-            collision_groups:    SensorCollisionGroups::new(),
-            parent_prox:         false,
-            user_data:           None,
-            interfering_bodies:  Vec::new(),
-            interfering_sensors: Vec::new()
+            parent: parent,
+            relative_position: na::one(),
+            shape: shape,
+            margin: na::zero(),
+            collision_groups: SensorCollisionGroups::new(),
+            parent_prox: false,
+            user_data: None,
+            interfering_bodies: Vec::new(),
+            interfering_sensors: Vec::new(),
         }
     }
 
@@ -105,7 +108,7 @@ impl<N: Real> Sensor<N> {
     pub fn position(&self) -> Isometry<N> {
         match self.parent {
             Some(ref rb) => *rb.borrow().position() * self.relative_position,
-            None         => self.relative_position.clone()
+            None => self.relative_position.clone(),
         }
     }
 
@@ -116,23 +119,21 @@ impl<N: Real> Sensor<N> {
     #[inline]
     pub fn set_position(&mut self, abs_pos: Isometry<N>) {
         match self.parent {
-            Some(ref rb) => {
-                self.relative_position = rb.borrow().position().inverse() * abs_pos
-            }
-            None => self.relative_position = abs_pos
+            Some(ref rb) => self.relative_position = rb.borrow().position().inverse() * abs_pos,
+            None => self.relative_position = abs_pos,
         }
     }
 
     /// This sensor position's translational component.
-    /// 
+    ///
     #[inline]
     pub fn center(&self) -> Point<N> {
         match self.parent {
             Some(ref rb) => {
                 let coords = self.relative_position.translation.vector;
                 *rb.borrow().position() * Point::from_coordinates(coords)
-            },
-            None => Point::from_coordinates(self.relative_position.translation.vector)
+            }
+            None => Point::from_coordinates(self.relative_position.translation.vector),
         }
     }
 

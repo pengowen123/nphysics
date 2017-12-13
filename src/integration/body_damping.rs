@@ -10,8 +10,8 @@ use object::RigidBody;
 /// This will remove a part of the linear and angular velocity of every rigid body at each frame.
 /// Do not use unless you are experiencing unrealistic vibrations or very unstable joints.
 pub struct BodyDamping<N: Real> {
-    linear_damping:  N,
-    angular_damping: N
+    linear_damping: N,
+    angular_damping: N,
 }
 
 impl<N: Real> BodyDamping<N> {
@@ -25,7 +25,7 @@ impl<N: Real> BodyDamping<N> {
     #[inline]
     pub fn new(linear_damping: N, angular_damping: N) -> BodyDamping<N> {
         BodyDamping {
-            linear_damping:  linear_damping,
+            linear_damping: linear_damping,
             angular_damping: angular_damping,
         }
     }

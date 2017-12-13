@@ -34,9 +34,9 @@ macro_rules! dispatch(
     }
 );
 
-type DCompound<N>   = Compound<Point<N>, Isometry<N>>;
+type DCompound<N> = Compound<Point<N>, Isometry<N>>;
 type DConvexHull<N> = ConvexHull<Point<N>>;
-type DCuboid<N>     = Cuboid<Vector<N>>;
+type DCuboid<N> = Cuboid<Vector<N>>;
 
 impl<N: Real> Volumetric<N, Point<N>, AngularInertia<N>> for Shape<Point<N>, Isometry<N>> {
     fn area(&self) -> N {

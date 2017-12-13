@@ -6,7 +6,7 @@ use object::{STATIC_GROUP_ID, SENSOR_GROUP_ID};
 /// The `group 29` is reserved and you cannot use it.
 #[derive(Clone, Debug, Copy)]
 pub struct RigidBodyCollisionGroups {
-    collision_groups: CollisionGroups
+    collision_groups: CollisionGroups,
 }
 
 impl RigidBodyCollisionGroups {
@@ -23,9 +23,7 @@ impl RigidBodyCollisionGroups {
         groups.modify_whitelist(STATIC_GROUP_ID, false);
         groups.modify_whitelist(SENSOR_GROUP_ID, false);
 
-        RigidBodyCollisionGroups{
-            collision_groups: groups
-        }
+        RigidBodyCollisionGroups { collision_groups: groups }
     }
 
     /// Creates a new `RigidBodyCollisionGroups` that enables collisions with every user-defined
@@ -37,25 +35,34 @@ impl RigidBodyCollisionGroups {
 
         groups.modify_membership(STATIC_GROUP_ID, true);
         groups.modify_membership(SENSOR_GROUP_ID, false);
-        groups.modify_whitelist(STATIC_GROUP_ID,  false);
-        groups.modify_whitelist(SENSOR_GROUP_ID,  false);
+        groups.modify_whitelist(STATIC_GROUP_ID, false);
+        groups.modify_whitelist(SENSOR_GROUP_ID, false);
 
         groups.modify_blacklist(STATIC_GROUP_ID, true);
         groups.modify_blacklist(SENSOR_GROUP_ID, true);
 
-        RigidBodyCollisionGroups{
-            collision_groups: groups
-        }
+        RigidBodyCollisionGroups { collision_groups: groups }
     }
 
     fn configure_reserved_flags(&mut self, is_dynamic: bool) {
         if is_dynamic {
-            self.collision_groups.modify_membership(STATIC_GROUP_ID, false);
-            self.collision_groups.modify_membership(SENSOR_GROUP_ID, false);
-        }
-        else {
-            self.collision_groups.modify_membership(STATIC_GROUP_ID, true);
-            self.collision_groups.modify_membership(SENSOR_GROUP_ID, false);
+            self.collision_groups.modify_membership(
+                STATIC_GROUP_ID,
+                false,
+            );
+            self.collision_groups.modify_membership(
+                SENSOR_GROUP_ID,
+                false,
+            );
+        } else {
+            self.collision_groups.modify_membership(
+                STATIC_GROUP_ID,
+                true,
+            );
+            self.collision_groups.modify_membership(
+                SENSOR_GROUP_ID,
+                false,
+            );
         }
     }
 

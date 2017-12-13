@@ -14,10 +14,10 @@ use utils::union_find;
 ///
 /// It is responsible for making objects sleep or wake up.
 pub struct ActivationManager<N: Real> {
-    mix_factor:     N,
-    ufind:          Vec<UnionFindSet>,
+    mix_factor: N,
+    ufind: Vec<UnionFindSet>,
     can_deactivate: Vec<bool>,
-    to_activate:    Vec<RigidBodyHandle<N>>,
+    to_activate: Vec<RigidBodyHandle<N>>,
 }
 
 impl<N: Real> ActivationManager<N> {
@@ -27,13 +27,16 @@ impl<N: Real> ActivationManager<N> {
     /// * `thresold`   - the minimum energy required to keep an object awake.
     /// * `mix_factor` - the ratio of energy to keep between two frames.
     pub fn new(mix_factor: N) -> ActivationManager<N> {
-        assert!(mix_factor >= na::zero(), "The energy mixing factor must be between 0.0 and 1.0.");
+        assert!(
+            mix_factor >= na::zero(),
+            "The energy mixing factor must be between 0.0 and 1.0."
+        );
 
         ActivationManager {
-            mix_factor:     mix_factor,
-            ufind:          Vec::new(),
+            mix_factor: mix_factor,
+            ufind: Vec::new(),
             can_deactivate: Vec::new(),
-            to_activate:    Vec::new(),
+            to_activate: Vec::new(),
         }
     }
 
@@ -49,21 +52,24 @@ impl<N: Real> ActivationManager<N> {
         match b.deactivation_threshold() {
             Some(threshold) => {
                 // FIXME: take the time in account (to make a true RWA)
-                let _1         = na::one::<N>();
+                let _1 = na::one::<N>();
                 let new_energy = (_1 - self.mix_factor) * b.activation_state().energy() +
-                    self.mix_factor * (na::norm_squared(&b.lin_vel()) + na::norm_squared(&b.ang_vel()));
+                    self.mix_factor *
+                        (na::norm_squared(&b.lin_vel()) + na::norm_squared(&b.ang_vel()));
 
                 b.activate(new_energy.min(threshold * na::convert(4.0f64)));
-            },
-            None => { }
+            }
+            None => {}
         }
     }
 
     /// Update the activation manager, activating and deactivating objects when needed.
-    pub fn update(&mut self,
-                  world:  &mut RigidBodyCollisionWorld<N>,
-                  joints: &JointManager<N>,
-                  bodies: &HashMap<usize, RigidBodyHandle<N>, UintTWHash>) {
+    pub fn update(
+        &mut self,
+        world: &mut RigidBodyCollisionWorld<N>,
+        joints: &JointManager<N>,
+        bodies: &HashMap<usize, RigidBodyHandle<N>, UintTWHash>,
+    ) {
         /*
          *
          * Update bodies energy
@@ -90,7 +96,7 @@ impl<N: Real> ActivationManager<N> {
 
             match rb.deactivation_threshold() {
                 Some(threshold) => rb.activate(threshold * na::convert(2.0f64)),
-                None => { }
+                None => {}
             }
         }
 
@@ -104,10 +110,11 @@ impl<N: Real> ActivationManager<N> {
         // Resize buffers.
         if bodies.len() > self.ufind.len() {
             let to_add = bodies.len() - self.ufind.len();
-            self.ufind.extend(iter::repeat(UnionFindSet::new(0)).take(to_add));
+            self.ufind.extend(
+                iter::repeat(UnionFindSet::new(0)).take(to_add),
+            );
             self.can_deactivate.extend(iter::repeat(false).take(to_add));
-        }
-        else {
+        } else {
             self.ufind.truncate(bodies.len());
             self.can_deactivate.truncate(bodies.len());
         }
@@ -122,7 +129,11 @@ impl<N: Real> ActivationManager<N> {
         }
 
         // Run the union-find.
-        fn make_union<N: Real>(b1: &RigidBodyHandle<N>, b2: &RigidBodyHandle<N>, ufs: &mut [UnionFindSet]) {
+        fn make_union<N: Real>(
+            b1: &RigidBodyHandle<N>,
+            b2: &RigidBodyHandle<N>,
+            ufs: &mut [UnionFindSet],
+        ) {
             let rb1 = b1.borrow();
             let rb2 = b2.borrow();
 
@@ -132,7 +143,9 @@ impl<N: Real> ActivationManager<N> {
         }
 
         for (b1, b2, cd) in world.contact_pairs() {
-            if let (&WorldObject::RigidBody(ref rb1), &WorldObject::RigidBody(ref rb2)) = (&b1.data, &b2.data) {
+            if let (&WorldObject::RigidBody(ref rb1), &WorldObject::RigidBody(ref rb2)) =
+                (&b1.data, &b2.data)
+            {
                 if cd.num_contacts() != 0 {
                     make_union(&rb1, &rb2, &mut self.ufind[..])
                 }
@@ -142,16 +155,22 @@ impl<N: Real> ActivationManager<N> {
         for e in joints.joints().elements().iter() {
             match e.value {
                 Constraint::RBRB(ref b1, ref b2, _) => make_union(b1, b2, &mut self.ufind[..]),
-                Constraint::BallInSocket(ref b)   => {
-                    match (b.borrow().anchor1().body.as_ref(), b.borrow().anchor2().body.as_ref()) {
+                Constraint::BallInSocket(ref b) => {
+                    match (
+                        b.borrow().anchor1().body.as_ref(),
+                        b.borrow().anchor2().body.as_ref(),
+                    ) {
                         (Some(b1), Some(b2)) => make_union(b1, b2, &mut self.ufind[..]),
-                        _ => { }
+                        _ => {}
                     }
-                },
-                Constraint::Fixed(ref f)   => {
-                    match (f.borrow().anchor1().body.as_ref(), f.borrow().anchor2().body.as_ref()) {
+                }
+                Constraint::Fixed(ref f) => {
+                    match (
+                        f.borrow().anchor1().body.as_ref(),
+                        f.borrow().anchor2().body.as_ref(),
+                    ) {
                         (Some(b1), Some(b2)) => make_union(b1, b2, &mut self.ufind[..]),
-                        _ => { }
+                        _ => {}
                     }
                 }
             }
@@ -161,32 +180,32 @@ impl<N: Real> ActivationManager<N> {
          * Body activation/deactivation.
          */
         // Find deactivable islands.
-        for i in 0usize .. self.ufind.len() {
+        for i in 0usize..self.ufind.len() {
             let root = union_find::find(i, &mut self.ufind[..]);
-            let b    = bodies.elements()[i].value.borrow();
+            let b = bodies.elements()[i].value.borrow();
 
-            self.can_deactivate[root] =
-                match b.deactivation_threshold() {
-                    Some(threshold) => {
-                        self.can_deactivate[root] && b.activation_state().energy() < threshold
-                    },
-                    None => false
-                };
+            self.can_deactivate[root] = match b.deactivation_threshold() {
+                Some(threshold) => {
+                    self.can_deactivate[root] && b.activation_state().energy() < threshold
+                }
+                None => false,
+            };
         }
 
         // Activate/deactivate islands.
-        for i in 0usize .. self.ufind.len() {
+        for i in 0usize..self.ufind.len() {
             let root = union_find::find(i, &mut self.ufind[..]);
             let mut b = bodies.elements()[i].value.borrow_mut();
 
-            if self.can_deactivate[root] { // Everybody in this set can be deactivacted.
+            if self.can_deactivate[root] {
+                // Everybody in this set can be deactivacted.
                 b.deactivate();
-            }
-            else { // Everybody in this set must be reactivated.
+            } else {
+                // Everybody in this set must be reactivated.
                 if !b.is_active() && b.can_move() {
                     match b.deactivation_threshold() {
                         Some(threshold) => b.activate(threshold * na::convert::<f64, N>(2.0f64)),
-                        None => { }
+                        None => {}
                     }
                 }
             }

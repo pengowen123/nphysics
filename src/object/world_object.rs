@@ -9,7 +9,7 @@ pub enum WorldObject<N: Real> {
     /// A rigid body handle.
     RigidBody(RigidBodyHandle<N>),
     /// A sensor handle.
-    Sensor(SensorHandle<N>)
+    Sensor(SensorHandle<N>),
 }
 
 /// Reference to a world object.
@@ -17,7 +17,7 @@ pub enum WorldObjectBorrowed<'a, N: Real> {
     /// A borrowed rigid body handle.
     RigidBody(::Ref<'a, RigidBody<N>>),
     /// A borrowed sensor handle.
-    Sensor(::Ref<'a, Sensor<N>>)
+    Sensor(::Ref<'a, Sensor<N>>),
 }
 
 /// Mutable reference to a world object.
@@ -25,7 +25,7 @@ pub enum WorldObjectBorrowedMut<'a, N: Real> {
     /// A mutably borrowed rigid body handle.
     RigidBody(::RefMut<'a, RigidBody<N>>),
     /// A mutably borrowed sensor handle.
-    Sensor(::RefMut<'a, Sensor<N>>)
+    Sensor(::RefMut<'a, Sensor<N>>),
 }
 
 impl<N: Real> WorldObject<N> {
@@ -50,7 +50,7 @@ impl<N: Real> WorldObject<N> {
     pub fn is_rigid_body(&self) -> bool {
         match *self {
             WorldObject::RigidBody(_) => true,
-            _                         => false
+            _ => false,
         }
     }
 
@@ -59,7 +59,7 @@ impl<N: Real> WorldObject<N> {
     pub fn is_sensor(&self) -> bool {
         match *self {
             WorldObject::Sensor(_) => true,
-            _                      => false
+            _ => false,
         }
     }
 
@@ -68,7 +68,7 @@ impl<N: Real> WorldObject<N> {
     pub fn unwrap_sensor(self) -> SensorHandle<N> {
         match self {
             WorldObject::Sensor(s) => s,
-            _                      => panic!("This world object is not a sensor.")
+            _ => panic!("This world object is not a sensor."),
         }
     }
 
@@ -77,7 +77,7 @@ impl<N: Real> WorldObject<N> {
     pub fn unwrap_rigid_body(self) -> RigidBodyHandle<N> {
         match self {
             WorldObject::RigidBody(rb) => rb.clone(),
-            _                          => panic!("This world object is not a rigid body.")
+            _ => panic!("This world object is not a rigid body."),
         }
     }
 
@@ -86,7 +86,7 @@ impl<N: Real> WorldObject<N> {
     pub fn uid(&self) -> usize {
         match *self {
             WorldObject::RigidBody(ref rb) => WorldObject::rigid_body_uid(rb),
-            WorldObject::Sensor(ref s)     => WorldObject::sensor_uid(s)
+            WorldObject::Sensor(ref s) => WorldObject::sensor_uid(s),
         }
     }
 
@@ -95,7 +95,7 @@ impl<N: Real> WorldObject<N> {
     pub fn borrow(&self) -> WorldObjectBorrowed<N> {
         match *self {
             WorldObject::RigidBody(ref rb) => WorldObjectBorrowed::RigidBody(rb.borrow()),
-            WorldObject::Sensor(ref s)     => WorldObjectBorrowed::Sensor(s.borrow())
+            WorldObject::Sensor(ref s) => WorldObjectBorrowed::Sensor(s.borrow()),
         }
     }
 
@@ -104,7 +104,7 @@ impl<N: Real> WorldObject<N> {
     pub fn borrow_sensor(&self) -> ::Ref<Sensor<N>> {
         match *self {
             WorldObject::Sensor(ref s) => s.borrow(),
-            _                          => panic!("This world object is not a sensor.")
+            _ => panic!("This world object is not a sensor."),
         }
     }
 
@@ -113,7 +113,7 @@ impl<N: Real> WorldObject<N> {
     pub fn borrow_rigid_body(&self) -> ::Ref<RigidBody<N>> {
         match *self {
             WorldObject::RigidBody(ref rb) => rb.borrow(),
-            _                              => panic!("This world object is not a rigid body.")
+            _ => panic!("This world object is not a rigid body."),
         }
     }
 
@@ -121,8 +121,10 @@ impl<N: Real> WorldObject<N> {
     #[inline]
     pub fn borrow_mut(&mut self) -> WorldObjectBorrowedMut<N> {
         match *self {
-            WorldObject::RigidBody(ref mut rb) => WorldObjectBorrowedMut::RigidBody(rb.borrow_mut()),
-            WorldObject::Sensor(ref mut s)     => WorldObjectBorrowedMut::Sensor(s.borrow_mut())
+            WorldObject::RigidBody(ref mut rb) => WorldObjectBorrowedMut::RigidBody(
+                rb.borrow_mut(),
+            ),
+            WorldObject::Sensor(ref mut s) => WorldObjectBorrowedMut::Sensor(s.borrow_mut()),
         }
     }
 
@@ -131,7 +133,7 @@ impl<N: Real> WorldObject<N> {
     pub fn borrow_mut_sensor(&mut self) -> ::RefMut<Sensor<N>> {
         match *self {
             WorldObject::Sensor(ref mut s) => s.borrow_mut(),
-            _                              => panic!("This world object is not a sensor.")
+            _ => panic!("This world object is not a sensor."),
         }
     }
 
@@ -140,7 +142,7 @@ impl<N: Real> WorldObject<N> {
     pub fn borrow_mut_rigid_body(&mut self) -> ::RefMut<RigidBody<N>> {
         match *self {
             WorldObject::RigidBody(ref mut rb) => rb.borrow_mut(),
-            _                                  => panic!("This world object is not a rigid body.")
+            _ => panic!("This world object is not a rigid body."),
         }
     }
 }

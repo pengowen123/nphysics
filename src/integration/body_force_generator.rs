@@ -9,7 +9,7 @@ use integration::Integrator;
 /// A constant linear and angular force generator.
 pub struct BodyForceGenerator<N: Real> {
     lin_acc: Vector<N>,
-    ang_acc: Orientation<N>
+    ang_acc: Orientation<N>,
 }
 
 impl<N: Real> BodyForceGenerator<N> {
@@ -22,7 +22,7 @@ impl<N: Real> BodyForceGenerator<N> {
     pub fn new(lin_acc: Vector<N>, ang_acc: Orientation<N>) -> BodyForceGenerator<N> {
         BodyForceGenerator {
             lin_acc: lin_acc,
-            ang_acc: ang_acc
+            ang_acc: ang_acc,
         }
     }
 }

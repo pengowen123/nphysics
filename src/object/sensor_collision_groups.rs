@@ -6,7 +6,7 @@ use object::{STATIC_GROUP_ID, SENSOR_GROUP_ID};
 /// The `group 29` is reserved and you cannot use it.
 #[derive(Clone, Debug, Copy)]
 pub struct SensorCollisionGroups {
-    collision_groups: CollisionGroups
+    collision_groups: CollisionGroups,
 }
 
 impl SensorCollisionGroups {
@@ -19,23 +19,20 @@ impl SensorCollisionGroups {
 
         groups.modify_membership(STATIC_GROUP_ID, false);
         groups.modify_membership(SENSOR_GROUP_ID, true);
-        groups.modify_whitelist(STATIC_GROUP_ID,  false);
-        groups.modify_whitelist(SENSOR_GROUP_ID,  false);
+        groups.modify_whitelist(STATIC_GROUP_ID, false);
+        groups.modify_whitelist(SENSOR_GROUP_ID, false);
 
         groups.modify_blacklist(STATIC_GROUP_ID, true);
         groups.modify_blacklist(SENSOR_GROUP_ID, true);
 
-        SensorCollisionGroups{
-            collision_groups: groups
-        }
+        SensorCollisionGroups { collision_groups: groups }
     }
 
 
     /*
      * For compatibility with the implementation macro.
      */
-    fn configure_reserved_flags(&self, _: bool) {
-    }
+    fn configure_reserved_flags(&self, _: bool) {}
 
     fn is_dynamic(&self) -> bool {
         true

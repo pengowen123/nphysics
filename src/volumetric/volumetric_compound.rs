@@ -43,25 +43,23 @@ impl<N: Real> Volumetric<N, Point<N>, AngularInertia<N>> for Compound<Point<N>, 
             gtot = gtot + (*m * cpart).coords;
         }
 
-        if mtot.is_zero() {
-            gtot
-        }
-        else {
-            ctot / mtot
-        }
+        if mtot.is_zero() { gtot } else { ctot / mtot }
     }
 
     fn unit_angular_inertia(&self) -> AngularInertia<N> {
         let mut itot: AngularInertia<N> = Zero::zero();
 
-        let com    = self.center_of_mass();
+        let com = self.center_of_mass();
         let shapes = self.shapes();
 
         for &(ref m, ref s) in shapes.iter() {
             let (mpart, cpart, ipart) = s.mass_properties(na::one());
 
-            itot = itot + ipart.to_world_space(m)
-                               .to_relative_wrt_point(mpart, &(*m * cpart + (-com.coords)));
+            itot = itot +
+                ipart.to_world_space(m).to_relative_wrt_point(
+                    mpart,
+                    &(*m * cpart + (-com.coords)),
+                );
         }
 
         itot
@@ -78,7 +76,10 @@ impl<N: Real> Volumetric<N, Point<N>, AngularInertia<N>> for Compound<Point<N>, 
         let mut mtot = N::zero();
 
         let shapes = self.shapes();
-        let props: Vec<_> = shapes.iter().map(|&(_, ref s)| s.mass_properties(na::one())).collect();
+        let props: Vec<_> = shapes
+            .iter()
+            .map(|&(_, ref s)| s.mass_properties(na::one()))
+            .collect();
 
         for (&(ref m, _), &(ref mpart, ref cpart, _)) in shapes.iter().zip(props.iter()) {
             mtot = mtot + *mpart;
@@ -88,13 +89,16 @@ impl<N: Real> Volumetric<N, Point<N>, AngularInertia<N>> for Compound<Point<N>, 
 
         if mtot.is_zero() {
             ctot = gtot;
-        }
-        else {
+        } else {
             ctot = ctot / mtot;
         }
 
         for (&(ref m, _), &(ref mpart, ref cpart, ref ipart)) in shapes.iter().zip(props.iter()) {
-            itot = itot + ipart.to_world_space(m).to_relative_wrt_point(*mpart, &(*m * *cpart + (-ctot.coords)));
+            itot = itot +
+                ipart.to_world_space(m).to_relative_wrt_point(
+                    *mpart,
+                    &(*m * *cpart + (-ctot.coords)),
+                );
         }
 
         (mtot * density, ctot, itot * density)

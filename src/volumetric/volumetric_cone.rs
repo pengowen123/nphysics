@@ -15,13 +15,9 @@ pub fn cone_volume<N: Real>(dimension: usize, half_height: N, radius: N) -> N {
     assert!(dimension == 2 || dimension == 3);
 
     match dimension {
-        2 => {
-            radius * half_height * na::convert(2.0f64)
-        }
-        3 => {
-            radius * radius * N::pi() * half_height * na::convert(2.0f64 / 3.0)
-        }
-        _ => unreachable!()
+        2 => radius * half_height * na::convert(2.0f64),
+        3 => radius * radius * N::pi() * half_height * na::convert(2.0f64 / 3.0),
+        _ => unreachable!(),
     }
 }
 
@@ -33,18 +29,18 @@ pub fn cone_area<N: Real>(dimension: usize, half_height: N, radius: N) -> N {
     match dimension {
         2 => {
             let height = half_height * na::convert(2.0f64);
-            let side   = (height * height + radius * radius).sqrt();
+            let side = (height * height + radius * radius).sqrt();
 
             radius * na::convert(2.0f64) + side
         }
         3 => {
-            let _pi    = N::pi();
+            let _pi = N::pi();
             let height = half_height + half_height;
-            let side   = (height * height + radius * radius).sqrt();
+            let side = (height * height + radius * radius).sqrt();
 
-            radius * radius *_pi + side * radius * _pi
+            radius * radius * _pi + side * radius * _pi
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -60,8 +56,10 @@ pub fn cone_center_of_mass<P: Point>(half_height: P::Real) -> P {
 /// The unit angular inertia of a cone.
 #[inline]
 pub fn cone_unit_angular_inertia<N, I>(dimension: usize, half_height: N, radius: N) -> I
-    where N: Real,
-          I: Zero + IndexMut<(usize, usize), Output = N> {
+where
+    N: Real,
+    I: Zero + IndexMut<(usize, usize), Output = N>,
+{
     assert!(dimension == 2 || dimension == 3);
 
     match dimension {
@@ -75,8 +73,7 @@ pub fn cone_unit_angular_inertia<N, I>(dimension: usize, half_height: N, radius:
         }
         3 => {
             let sq_radius = radius * radius;
-            let sq_height = half_height * half_height *
-                na::convert(4.0f64);
+            let sq_height = half_height * half_height * na::convert(4.0f64);
             let off_principal = sq_radius * na::convert(3.0f64 / 20.0) +
                 sq_height * na::convert(3.0f64 / 5.0);
 
@@ -90,7 +87,7 @@ pub fn cone_unit_angular_inertia<N, I>(dimension: usize, half_height: N, radius:
 
             res
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 

@@ -43,9 +43,15 @@ impl<N: Real> GeneralizedCross for Vector3<N> {
     #[inline]
     fn gcross_matrix(&self) -> Matrix3<N> {
         Matrix3::new(
-            N::zero(), -self.z,   self.y,
-            self.z,    N::zero(), -self.x,
-            -self.y,   self.x,    N::zero()
+            N::zero(),
+            -self.z,
+            self.y,
+            self.z,
+            N::zero(),
+            -self.x,
+            -self.y,
+            self.x,
+            N::zero(),
         )
     }
 }

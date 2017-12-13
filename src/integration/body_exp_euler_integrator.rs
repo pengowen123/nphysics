@@ -30,7 +30,8 @@ impl<N: Real> Integrator<N, RigidBody<N>> for BodyExpEulerIntegrator {
                 &rb.lin_vel(),
                 &rb.ang_vel(),
                 &rb.lin_acc(),
-                &rb.ang_acc());
+                &rb.ang_acc(),
+            );
 
             rb.append_transformation(&t);
             rb.set_lin_vel_internal(lv);

@@ -12,11 +12,11 @@ use math::{Point, Translation};
 
 
 struct CCDRigidBody<N: Real> {
-    rigid_body:      RigidBodyHandle<N>,
-    sqthreshold:     N,
-    last_center:     Point<N>,
+    rigid_body: RigidBodyHandle<N>,
+    sqthreshold: N,
+    last_center: Point<N>,
     trigger_sensors: bool,
-    accept_zero:     bool
+    accept_zero: bool,
 }
 
 impl<N: Real> CCDRigidBody<N> {
@@ -24,11 +24,11 @@ impl<N: Real> CCDRigidBody<N> {
         let last_center = rigid_body.borrow().position_center();
 
         CCDRigidBody {
-            sqthreshold:     threshold * threshold,
-            last_center:     last_center,
-            rigid_body:      rigid_body,
+            sqthreshold: threshold * threshold,
+            last_center: last_center,
+            rigid_body: rigid_body,
             trigger_sensors: trigger_sensors,
-            accept_zero:     true
+            accept_zero: true,
         }
     }
 }
@@ -36,7 +36,7 @@ impl<N: Real> CCDRigidBody<N> {
 /// Handles Continuous Collision Detection.
 pub struct TranslationalCCDMotionClamping<N: Real> {
     objects: HashMap<usize, CCDRigidBody<N>, UintTWHash>,
-    intersected_sensors_cache: Vec<(N, SensorHandle<N>)>
+    intersected_sensors_cache: Vec<(N, SensorHandle<N>)>,
 }
 
 impl<N: Real> TranslationalCCDMotionClamping<N> {
@@ -44,18 +44,22 @@ impl<N: Real> TranslationalCCDMotionClamping<N> {
     /// fast-moving rigid bodies.
     pub fn new() -> TranslationalCCDMotionClamping<N> {
         TranslationalCCDMotionClamping {
-            objects:                   HashMap::new(UintTWHash::new()),
-            intersected_sensors_cache: Vec::new()
+            objects: HashMap::new(UintTWHash::new()),
+            intersected_sensors_cache: Vec::new(),
         }
     }
 
     /// Enables continuous collision for the given rigid body.
-    pub fn add_ccd_to(&mut self,
-                      rigid_body:       RigidBodyHandle<N>,
-                      motion_threshold: N,
-                      trigger_sensors:  bool) {
-        self.objects.insert(rigid_body.ptr() as usize,
-                            CCDRigidBody::new(rigid_body, motion_threshold, trigger_sensors));
+    pub fn add_ccd_to(
+        &mut self,
+        rigid_body: RigidBodyHandle<N>,
+        motion_threshold: N,
+        trigger_sensors: bool,
+    ) {
+        self.objects.insert(
+            rigid_body.ptr() as usize,
+            CCDRigidBody::new(rigid_body, motion_threshold, trigger_sensors),
+        );
     }
 
     /// Enables continuous collision for the given rigid body.
@@ -82,14 +86,14 @@ impl<N: Real> TranslationalCCDMotionClamping<N> {
                 let obj1_uid = co1.value.rigid_body.ptr() as usize;
 
                 let last_transform = Translation::from_vector(-movement) * obj1.position();
-                let begin_aabb     = bounding_volume::aabb(obj1.shape().as_ref(), &last_transform);
-                let end_aabb       = bounding_volume::aabb(obj1.shape().as_ref(), obj1.position());
-                let swept_aabb     = begin_aabb.merged(&end_aabb);
+                let begin_aabb = bounding_volume::aabb(obj1.shape().as_ref(), &last_transform);
+                let end_aabb = bounding_volume::aabb(obj1.shape().as_ref(), obj1.position());
+                let swept_aabb = begin_aabb.merged(&end_aabb);
 
                 /*
                  * Find the minimum TOI.
                  */
-                let mut min_toi   = na::one::<N>();
+                let mut min_toi = na::one::<N>();
                 let mut toi_found = false;
                 let dir = movement.clone();
 
@@ -109,25 +113,31 @@ impl<N: Real> TranslationalCCDMotionClamping<N> {
                             obj1.shape().as_ref(),
                             &obj2.position(),
                             &na::zero(), // Assume the other object does not move.
-                            obj2.shape().as_ref());
+                            obj2.shape().as_ref(),
+                        );
 
                         match toi {
                             Some(t) => {
                                 if obj2.is_sensor() {
                                     if co1.value.trigger_sensors {
-                                        self.intersected_sensors_cache.push((t, co2.data.clone().unwrap_sensor()));
+                                        self.intersected_sensors_cache.push((
+                                            t,
+                                            co2.data
+                                                .clone()
+                                                .unwrap_sensor(),
+                                        ));
                                         unimplemented!();
                                     }
-                                }
-                                else if t <= min_toi { // we need the equality case to set the `toi_found` flag.
+                                } else if t <= min_toi {
+                                    // we need the equality case to set the `toi_found` flag.
                                     toi_found = true;
 
                                     if t > _eps || co1.value.accept_zero {
                                         min_toi = t;
                                     }
                                 }
-                            },
-                            None => { }
+                            }
+                            None => {}
                         }
                     }
                 }
@@ -136,14 +146,15 @@ impl<N: Real> TranslationalCCDMotionClamping<N> {
                  * Revert the object translation at the toi.
                  */
                 if toi_found {
-                    obj1.append_translation(&Translation::from_vector(-dir * (na::one::<N>() - min_toi)));
+                    obj1.append_translation(
+                        &Translation::from_vector(-dir * (na::one::<N>() - min_toi)),
+                    );
                     co1.value.accept_zero = false;
 
                     // We moved the object: ensure the broad phase takes that in account.
                     cw.deferred_set_position(obj1_uid, obj1.position().clone());
                     update_collision_world = true;
-                }
-                else {
+                } else {
                     co1.value.accept_zero = true;
                 }
 
@@ -181,8 +192,7 @@ impl<N: Real> TranslationalCCDMotionClamping<N> {
         if update_collision_world {
             cw.update();
             true
-        }
-        else {
+        } else {
             false
         }
     }

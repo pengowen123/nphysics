@@ -16,7 +16,7 @@ pub fn cuboid_volume<V: Vector>(half_extents: &V) -> V::Real {
 
     let mut res: V::Real = na::one();
 
-    for i in 0 .. na::dimension::<V>() {
+    for i in 0..na::dimension::<V>() {
         res = res * half_extents[i] * na::convert(2.0f64)
     }
 
@@ -29,9 +29,7 @@ pub fn cuboid_area<V: Vector>(half_extents: &V) -> V::Real {
     assert!(na::dimension::<V>() == 2 || na::dimension::<V>() == 3);
 
     match na::dimension::<V>() {
-        2 => {
-            (half_extents[0] + half_extents[1]) * na::convert(4.0f64)
-        }
+        2 => (half_extents[0] + half_extents[1]) * na::convert(4.0f64),
         3 => {
             let he = half_extents;
             let xx = he[0] + he[0];
@@ -44,7 +42,7 @@ pub fn cuboid_area<V: Vector>(half_extents: &V) -> V::Real {
 
             (side_xy + side_xz + side_yz) * na::convert(2.0f64)
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -57,15 +55,17 @@ pub fn cuboid_center_of_mass<P: Point>() -> P {
 /// The unit angular inertia of a cuboid.
 #[inline]
 pub fn cuboid_unit_angular_inertia<V, I>(half_extents: &V) -> I
-    where V: Vector,
-          I: Zero + IndexMut<(usize, usize), Output = V::Real> {
+where
+    V: Vector,
+    I: Zero + IndexMut<(usize, usize), Output = V::Real>,
+{
     assert!(na::dimension::<V>() == 2 || na::dimension::<V>() == 3);
 
     match na::dimension::<V>() {
         2 => {
-            let _2: V::Real   = na::convert(2.0f64);
+            let _2: V::Real = na::convert(2.0f64);
             let _i12: V::Real = na::convert(1.0f64 / 12.0);
-            let w  = _i12 * _2 * _2;
+            let w = _i12 * _2 * _2;
             let ix = w * half_extents[0] * half_extents[0];
             let iy = w * half_extents[1] * half_extents[1];
 
@@ -76,10 +76,10 @@ pub fn cuboid_unit_angular_inertia<V, I>(half_extents: &V) -> I
             res
         }
         3 => {
-            let _0: V::Real   = na::zero();
-            let _2: V::Real   = na::convert(2.0f64);
+            let _0: V::Real = na::zero();
+            let _2: V::Real = na::convert(2.0f64);
             let _i12: V::Real = na::convert(1.0f64 / 12.0);
-            let w  = _i12 * _2 * _2;
+            let w = _i12 * _2 * _2;
             let ix = w * half_extents[0] * half_extents[0];
             let iy = w * half_extents[1] * half_extents[1];
             let iz = w * half_extents[2] * half_extents[2];
@@ -92,7 +92,7 @@ pub fn cuboid_unit_angular_inertia<V, I>(half_extents: &V) -> I
 
             res
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 

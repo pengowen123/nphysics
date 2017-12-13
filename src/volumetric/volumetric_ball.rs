@@ -32,7 +32,7 @@ pub fn ball_area<N: Real>(dimension: usize, radius: N) -> N {
             let _pi = N::pi();
             _pi * radius * radius * na::convert(4.0f64)
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
@@ -45,8 +45,10 @@ pub fn ball_center_of_mass<P: Point>() -> P {
 /// The unit angular inertia of a ball.
 #[inline]
 pub fn ball_unit_angular_inertia<N, I>(dimension: usize, radius: N) -> I
-    where N: Real,
-          I: Zero + IndexMut<(usize, usize), Output = N> {
+where
+    N: Real,
+    I: Zero + IndexMut<(usize, usize), Output = N>,
+{
     assert!(dimension == 2 || dimension == 3);
 
     match dimension {
@@ -68,7 +70,7 @@ pub fn ball_unit_angular_inertia<N, I>(dimension: usize, radius: N) -> I
 
             res
         }
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 

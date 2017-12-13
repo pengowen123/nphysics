@@ -89,7 +89,7 @@ The libraries needed to compile the examples are:
 #![deny(non_upper_case_globals)]
 #![deny(unused_qualifications)]
 #![warn(missing_docs)]
-#![deny(unused_results)]
+//#![deny(unused_results)]
 #![warn(non_camel_case_types)]
 #![allow(missing_copy_implementations)]
 #![doc(html_root_url = "http://nphysics-dev.org/doc")]

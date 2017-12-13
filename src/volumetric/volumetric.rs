@@ -46,12 +46,11 @@ pub trait Volumetric<N: Real, P, I: Mul<N, Output = I>> {
     /// Given its density, this computes the mass, center of mass, and inertia tensor of this object.
     fn mass_properties(&self, density: N) -> (N, P, I) {
         let mass = self.mass(density);
-        let com  = self.center_of_mass();
-        let ai   = self.angular_inertia(mass);
+        let com = self.center_of_mass();
+        let ai = self.angular_inertia(mass);
 
         (mass, com, ai)
     }
-
 }
 
 impl<N: Real> InertiaTensor<N, Point2<N>, Vector1<N>, Isometry2<N>> for Matrix1<N> {
@@ -79,18 +78,24 @@ impl<N: Real> InertiaTensor<N, Point3<N>, Vector3<N>, Isometry3<N>> for Matrix3<
 
     #[inline]
     fn to_world_space(&self, t: &Isometry3<N>) -> Matrix3<N> {
-        let rot  = t.rotation.to_rotation_matrix();
+        let rot = t.rotation.to_rotation_matrix();
         let irot = rot.inverse();
         rot * *self * irot
     }
 
     #[inline]
     fn to_relative_wrt_point(&self, mass: N, pt: &Point3<N>) -> Matrix3<N> {
-        let diag  = na::norm_squared(&pt.coords);
+        let diag = na::norm_squared(&pt.coords);
         let diagm = Matrix3::new(
-            diag.clone(), na::zero(),   na::zero(),
-            na::zero(),   diag.clone(), na::zero(),
-            na::zero(),   na::zero(),   diag
+            diag.clone(),
+            na::zero(),
+            na::zero(),
+            na::zero(),
+            diag.clone(),
+            na::zero(),
+            na::zero(),
+            na::zero(),
+            diag,
         );
 
         *self + (diagm - pt.coords * pt.coords.transpose()) * mass

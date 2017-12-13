@@ -6,9 +6,9 @@ use math::Point;
 /// One of the two end points of a joint.
 pub struct Anchor<N: Real, P> {
     /// The body attached to this anchor.
-    pub body:     Option<::Rc<RigidBody<N>>>,
+    pub body: Option<::Rc<RigidBody<N>>>,
     /// The attach position, in local coordinates of the attached body.
-    pub position: P
+    pub position: P,
 }
 
 impl<N: Real, P> Anchor<N, P> {
@@ -18,8 +18,8 @@ impl<N: Real, P> Anchor<N, P> {
     /// is the attach point in global coordinates.
     pub fn new(body: Option<::Rc<RigidBody<N>>>, position: P) -> Anchor<N, P> {
         Anchor {
-            body:     body,
-            position: position
+            body: body,
+            position: position,
         }
     }
 }
@@ -34,8 +34,8 @@ impl<N: Real, P> Anchor<N, P> {
                 let rb = b.borrow();
 
                 rb.center_of_mass().clone()
-            },
-            None => na::origin()
+            }
+            None => na::origin(),
         }
     }
 }

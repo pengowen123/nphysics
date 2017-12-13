@@ -9,7 +9,7 @@ pub struct Velocities<N: Real> {
     /// Linear velocity.
     pub lv: Vector<N>,
     /// Angular velocity.
-    pub av: Orientation<N>
+    pub av: Orientation<N>,
 }
 
 impl<N: Real> Velocities<N> {
@@ -17,7 +17,7 @@ impl<N: Real> Velocities<N> {
     pub fn new() -> Velocities<N> {
         Velocities {
             lv: na::zero(),
-            av: na::zero()
+            av: na::zero(),
         }
     }
 
@@ -40,12 +40,14 @@ impl<N: Real> Velocities<N> {
 /// * `is_lambda_zero` - indicates whether or not the every element of `result` has been
 /// reinitialized. Set this to `false` if the `result` comes from a previous execution of
 /// `projected_gauss_seidel_solve`: this will perform warm-starting.
-pub fn projected_gauss_seidel_solve<N: Real>(restitution:    &mut [VelocityConstraint<N>],
-                                             friction:       &mut [VelocityConstraint<N>],
-                                             result:         &mut [Velocities<N>],
-                                             num_bodies:     usize,
-                                             num_iterations: usize,
-                                             is_lambda_zero: bool) {
+pub fn projected_gauss_seidel_solve<N: Real>(
+    restitution: &mut [VelocityConstraint<N>],
+    friction: &mut [VelocityConstraint<N>],
+    result: &mut [Velocities<N>],
+    num_bodies: usize,
+    num_iterations: usize,
+    is_lambda_zero: bool,
+) {
     // initialize the solution with zeros...
     // mj_lambda is result
     assert!(result.len() == num_bodies);
@@ -68,7 +70,7 @@ pub fn projected_gauss_seidel_solve<N: Real>(restitution:    &mut [VelocityConst
     /*
      * solve the system
      */
-    for _ in 0 .. num_iterations {
+    for _ in 0..num_iterations {
         for c in restitution.iter_mut() {
             solve_velocity_constraint(c, result);
         }
@@ -88,7 +90,10 @@ pub fn projected_gauss_seidel_solve<N: Real>(restitution:    &mut [VelocityConst
 }
 
 #[inline(always)]
-fn setup_warmstart_for_constraint<N: Real>(c: &VelocityConstraint<N>, mj_lambda: &mut [Velocities<N>]) {
+fn setup_warmstart_for_constraint<N: Real>(
+    c: &VelocityConstraint<N>,
+    mj_lambda: &mut [Velocities<N>],
+) {
     let id1 = c.id1;
     let id2 = c.id2;
 
@@ -104,20 +109,23 @@ fn setup_warmstart_for_constraint<N: Real>(c: &VelocityConstraint<N>, mj_lambda:
 }
 
 #[inline(always)]
-fn solve_velocity_constraint<N: Real>(c: &mut VelocityConstraint<N>, mj_lambda: &mut [Velocities<N>]) {
+fn solve_velocity_constraint<N: Real>(
+    c: &mut VelocityConstraint<N>,
+    mj_lambda: &mut [Velocities<N>],
+) {
     let id1 = c.id1;
     let id2 = c.id2;
 
     let mut d_lambda_i = c.objective.clone();
 
     if id1 >= 0 {
-        d_lambda_i = d_lambda_i + na::dot(&c.normal, &mj_lambda[id1 as usize].lv)
-                                - na::dot(&c.rot_axis1, &mj_lambda[id1 as usize].av);
+        d_lambda_i = d_lambda_i + na::dot(&c.normal, &mj_lambda[id1 as usize].lv) -
+            na::dot(&c.rot_axis1, &mj_lambda[id1 as usize].av);
     }
 
     if id2 >= 0 {
-        d_lambda_i = d_lambda_i - na::dot(&c.normal, &mj_lambda[id2 as usize].lv)
-                                - na::dot(&c.rot_axis2, &mj_lambda[id2 as usize].av);
+        d_lambda_i = d_lambda_i - na::dot(&c.normal, &mj_lambda[id2 as usize].lv) -
+            na::dot(&c.rot_axis2, &mj_lambda[id2 as usize].av);
     }
 
     d_lambda_i = d_lambda_i * c.inv_projected_mass;

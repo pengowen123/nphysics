@@ -19,9 +19,11 @@ pub enum Constraint<N: Real> {
 impl<N: Real> Clone for Constraint<N> {
     fn clone(&self) -> Constraint<N> {
         match *self {
-            Constraint::RBRB(ref a, ref b, ref c) => Constraint::RBRB(a.clone(), b.clone(), c.clone()),
-            Constraint::BallInSocket(ref bis)     => Constraint::BallInSocket(bis.clone()),
-            Constraint::Fixed(ref f)              => Constraint::Fixed(f.clone()),
+            Constraint::RBRB(ref a, ref b, ref c) => {
+                Constraint::RBRB(a.clone(), b.clone(), c.clone())
+            }
+            Constraint::BallInSocket(ref bis) => Constraint::BallInSocket(bis.clone()),
+            Constraint::Fixed(ref f) => Constraint::Fixed(f.clone()),
         }
     }
 }
